@@ -55,29 +55,51 @@ YTHotConfig *(*InjectYTHotConfig)(void);
 
 %group WithInjection
 
+/// TODO: Write a more detailed function description
+/// Summary: Initializes PiP controller
 YTPlayerPIPController *initPlayerPiPControllerIfNeeded(YTPlayerPIPController *controller, id delegate, id parentResponder) {
+    // If the controller is already initialized, return it
     if (controller) return controller;
+    
+    // Allocate and initialize a new PiP controller if it doesn't exist
     controller = [[%c(YTPlayerPIPController) alloc] init];
+    
+    // Inject and assign all necessary dependencies
     MLPIPController *pip = InjectMLPIPController();
     YTSystemNotifications *systemNotifications = InjectYTSystemNotifications();
     YTBackgroundabilityPolicy *bgPolicy = InjectYTBackgroundabilityPolicy();
     YTPlayerViewControllerConfig *playerConfig = InjectYTPlayerViewControllerConfig();
+    
+    // Set the injected objects using Key-Value Coding (KVC) 
+    // to bypass private API restrictions
     [controller setValue:pip forKey:@"_pipController"];
     [controller setValue:bgPolicy forKey:@"_backgroundabilityPolicy"];
     [controller setValue:playerConfig forKey:@"_config"];
+    
+    // Try injecting the HotConfig, handling any potential exceptions
     @try {
         YTHotConfig *config = InjectYTHotConfig();
         [controller setValue:config forKey:@"_hotConfig"];
-    } @catch (id ex) {}
+    } @catch (NSException *ex) {
+        NSLog(@"Failed to set hotConfig: %@", ex.reason);
+    }
+    
+    // Set the parent responder if it's provided, ensuring exception handling
     if (parentResponder) {
         @try {
             [controller setValue:parentResponder forKey:@"_parentResponder"];
-        } @catch (id ex) {}
+        } @catch (NSException *ex) {
+            NSLog(@"Failed to set parentResponder: %@", ex.reason);
+        }
     }
+    
+    // Set the delegate and attach observers for background policy and PiP
     [controller setValue:delegate forKey:@"_delegate"];
     [bgPolicy addBackgroundabilityPolicyObserver:controller];
     [pip addPIPControllerObserver:controller];
     [systemNotifications addSystemNotificationsObserver:controller];
+    
+    // Return the fully initialized PiP controller
     return controller;
 }
 
