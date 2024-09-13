@@ -21,30 +21,37 @@ extern BOOL isPictureInPictureActive(MLPIPController *);
 BOOL hasSampleBufferPiP = NO;
 BOOL isLegacyVersion = NO;
 
+/// Check if Legacy PiP is enabled based on user preferences
 BOOL LegacyPiP() {
     return isLegacyVersion ? YES : [[NSUserDefaults standardUserDefaults] boolForKey:CompatibilityModeKey];
 }
 
+/// Forces render view type for base configuration in legacy PiP mode
 static void forceRenderViewTypeBase(YTIHamplayerConfig *hamplayerConfig) {
     if (!LegacyPiP()) return;
     hamplayerConfig.renderViewType = 2;
 }
 
+/// Forces render view type for hot configuration in legacy PiP mode
 static void forceRenderViewTypeHot(YTIHamplayerHotConfig *hamplayerHotConfig) {
     if (!LegacyPiP()) return;
     hamplayerHotConfig.renderViewType = 2;
 }
 
+/// Forces render view type for a general hot configuration object
 static void forceRenderViewType(YTHotConfig *hotConfig) {
     YTIHamplayerHotConfig *hamplayerHotConfig = [hotConfig hamplayerHotConfig];
     forceRenderViewTypeHot(hamplayerHotConfig);
 }
 
+/// Function pointers to dynamically inject controllers and configurations
+/// --------------------------------------------------------------------------------
 MLPIPController *(*InjectMLPIPController)(void);
 YTSystemNotifications *(*InjectYTSystemNotifications)(void);
 YTBackgroundabilityPolicy *(*InjectYTBackgroundabilityPolicy)(void);
 YTPlayerViewControllerConfig *(*InjectYTPlayerViewControllerConfig)(void);
 YTHotConfig *(*InjectYTHotConfig)(void);
+/// --------------------------------------------------------------------------------
 
 %group WithInjection
 
